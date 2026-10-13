@@ -54,10 +54,16 @@ body {
 }
 
 .sidebar nav {
+  flex: 1;
   margin-top: 32px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.logout-btn {
+  margin-top: auto;
+  color: var(--danger);
 }
 
 .nav-btn {
@@ -743,8 +749,12 @@ tr:hover td {
     width: 100%;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
+  }
+
+  .logout-btn {
+    margin-top: 0;
   }
 
   .nav-btn {

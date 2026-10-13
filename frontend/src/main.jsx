@@ -4,6 +4,7 @@ import Chart from 'chart.js/auto';
 import '../style.css';
 
 const emptyData = { drivers: [], work: [], expenses: [] };
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 
 const todayString = () => {
   const now = new Date();
@@ -33,7 +34,7 @@ function toDateOnly(value) {
 }
 
 async function apiRequest(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
@@ -83,7 +84,60 @@ async function getAllData() {
   };
 }
 
+function Login({ onLogin }) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // TODO: Replace with a real backend fetch call if you have /api/login endpoint e.g.:
+    // const res = await apiRequest('/api/login', { method: 'POST', body: JSON.stringify({ password }) });
+    
+    // Simple frontend passcode check demo (e.g., password: "admin")
+    if (password === 'admin123') {
+      onLogin();
+    } else {
+      setError('Invalid password. Please try again.');
+    }
+    setLoading(false);
+  }
+
+  return (
+    <main className="loading-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="panel" style={{ width: '100%', maxWidth: '400px' }}>
+        <h2>🚜 JCB Manager Login</h2>
+        <p className="muted" style={{ marginBottom: '1.5rem' }}>Enter your passcode to access dashboard.</p>
+        <form onSubmit={handleLogin} className="form-grid">
+          <label className="full">
+            Password
+            <input 
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              placeholder="Enter password" 
+              required 
+            />
+          </label>
+          {error && <p className="full" style={{ color: 'var(--danger)', fontSize: '0.9rem' }}>{error}</p>}
+          <div className="full">
+            <button className="primary" type="submit" disabled={loading} style={{ width: '100%' }}>
+              {loading ? 'Logging in…' : 'Login'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  );
+}
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('jcb_auth') === 'true';
+  });
   const [data, setData] = useState(emptyData);
   const [page, setPage] = useState('dashboard');
   const [loading, setLoading] = useState(true);
@@ -103,6 +157,7 @@ function App() {
   }, [toast]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     let active = true;
     async function load() {
       try {
@@ -120,7 +175,7 @@ function App() {
     }
     load();
     return () => { active = false; };
-  }, []);
+  }, [isAuthenticated]);
 
   const totals = useMemo(() => {
     const today = todayString();
@@ -161,7 +216,7 @@ function App() {
   }, [data]);
 
   useEffect(() => {
-    if (page !== 'dashboard' || !chartCanvas.current) return undefined;
+    if (!isAuthenticated || page !== 'dashboard' || !chartCanvas.current) return undefined;
     const instance = new Chart(chartCanvas.current, {
       type: 'line',
       data: {
@@ -190,10 +245,10 @@ function App() {
       instance.destroy();
       if (chart.current === instance) chart.current = null;
     };
-  }, [page]);
+  }, [isAuthenticated, page]);
 
   useEffect(() => {
-    if (page !== 'dashboard' || !chart.current) return;
+    if (!isAuthenticated || page !== 'dashboard' || !chart.current) return;
     const labels = [];
     const points = [];
     for (let offset = 6; offset >= 0; offset--) {
@@ -208,7 +263,7 @@ function App() {
     chart.current.data.labels = labels;
     chart.current.data.datasets[0].data = points;
     chart.current.update('none');
-  }, [data.work, page]);
+  }, [data.work, page, isAuthenticated]);
 
   async function reloadData() {
     setLoading(true);
@@ -318,6 +373,11 @@ function App() {
     if (saved) formElement.reset();
   }
 
+  function handleLogout() {
+    localStorage.removeItem('jcb_auth');
+    setIsAuthenticated(false);
+  }
+
   const pageTitles = {
     dashboard: 'Dashboard',
     work: 'Daily Work',
@@ -343,6 +403,13 @@ function App() {
     current.earnings += record.driverEarning;
     driverTotals.set(record.driverId, current);
   });
+
+  if (!isAuthenticated) {
+    return <Login onLogin={() => {
+      localStorage.setItem('jcb_auth', 'true');
+      setIsAuthenticated(true);
+    }} />;
+  }
 
   if (loading) {
     return <main className="loading-screen">Loading saved records…</main>;
@@ -373,6 +440,10 @@ function App() {
               <span>{title}</span>
             </button>
           ))}
+          <button className="nav-btn logout-btn" onClick={handleLogout}>
+            <span className="nav-icon" aria-hidden="true">🚪</span>
+            <span>Logout</span>
+          </button>
         </nav>
       </aside>
 

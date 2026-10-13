@@ -1,11 +1,4 @@
-backend/.env
 backend/*service-account*.json
-frontend/.env.local
-frontend/.env.*.local
-frontend/node_modules/
-frontend/dist/
-__pycache__/
-*.py[cod]
 
 # Python virtual environment
 backend/venv/

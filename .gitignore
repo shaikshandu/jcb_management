@@ -1,0 +1,31 @@
+backend/.env
+backend/*service-account*.json
+frontend/.env.local
+frontend/.env.*.local
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.py[cod]
+
+# Python virtual environment
+backend/venv/
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+!frontend/.env.example
+
+# Node.js
+node_modules/
+frontend/dist/
+
+# IDE and OS files
+.vscode/
+.DS_Store

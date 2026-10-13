@@ -32,7 +32,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 def get_db():
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL is missing. Create backend/.env")
-    return psycopg2.connect(postgresql://postgres:Shaik%40123@localhost:5432/jcb_management)
+    return psycopg2.connect(DATABASE_URL)
 
 def init_db():
     conn = get_db()

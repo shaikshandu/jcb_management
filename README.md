@@ -1,108 +1,76 @@
-# JCB Management System
+# JCB Management
 
-A JCB daily work, driver earnings, expenses, and revenue management system.
+A simple JCB work and expense tracker.
 
-## Stack
+## What this project uses
 
-- Frontend: React, Vite, CSS
-- Backend: Python Flask
-- Database: PostgreSQL
-- Authentication: demo passcode in the frontend (not production authentication)
-- Charts: Chart.js
+- `frontend/` - React website built with Vite
+- `backend/` - Python API built with Flask
+- PostgreSQL - database for drivers, work records, and expenses
 
-## Features
+The website sends requests to the Python API. The API reads and writes data in PostgreSQL.
 
-- Dashboard with revenue, hours, driver earnings, expenses, and profit
-- Daily JCB work, drivers, and expenses
-- Work and expense history, monthly/yearly summary, and driver earnings
-- Passcode-gated demo interface
+## Run it on your computer
 
-## 1. Create the PostgreSQL database
+### 1. Create a PostgreSQL database
 
-In pgAdmin or PostgreSQL terminal, run:
+Install PostgreSQL, then create a database named `jcb_management` using pgAdmin or the PostgreSQL command line:
 
 ```sql
 CREATE DATABASE jcb_management;
 ```
 
-## 2. Configure PostgreSQL
+### 2. Configure and start the backend
 
-Copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL` to your PostgreSQL connection string. The backend creates its tables when started with `python app.py`.
+From the project folder, copy the example settings and move into the backend folder:
 
-For example on Windows:
-
-```dotenv
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/jcb_management
-```
-
-## 3. Install Python packages
-
-From `backend`:
-
-```bash
+```powershell
+Copy-Item backend\.env.example backend\.env
+cd backend
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-## 4. Configure and build the React frontend
+Open `backend/.env` in your editor and set `DATABASE_URL` to your local PostgreSQL connection string. Keep this file private; never commit or share it.
 
-Copy `frontend/.env.example` to `frontend/.env.local`. Leave `VITE_API_BASE_URL` empty for local development; Vite proxies `/api` requests to Flask.
+Start the API:
 
-From `frontend`:
-
-```bash
-npm install
-npm run build
-```
-
-## 5. Start the application
-
-From `backend`:
-
-```bash
+```powershell
 python app.py
 ```
 
-Open <http://127.0.0.1:5000>.
+The API runs at <http://127.0.0.1:5000>.
 
-For frontend development, keep Flask running, then from `frontend` run `npm run dev` and open the URL Vite prints. API calls are proxied to Flask. Rebuild with `npm run build` before using the Flask-hosted page.
+### 3. Start the React website
 
-## 6. Deploy the frontend to Netlify
+Open a second terminal in the project folder, move into `frontend/`, install the JavaScript packages, and start Vite:
 
-The repository includes `netlify.toml`; Netlify builds the Vite app from `frontend` and publishes `frontend/dist`. Connect this repository to Netlify and keep the detected settings, or use:
-
-- Base directory: `frontend`
-- Build command: `npm run build`
-- Publish directory: `dist`
-
-The Flask API and PostgreSQL database cannot run as part of this static Netlify deployment. Deploy them separately on a host that supports Python and PostgreSQL, then configure:
-
-1. In Netlify, add the `VITE_API_BASE_URL` environment variable with the public backend origin, for example `https://your-backend.example.com` (no trailing slash), and redeploy.
-2. In the backend host, set `DATABASE_URL` to the hosted PostgreSQL connection string and `FRONTEND_ORIGINS` to your Netlify site origin, for example `https://your-site.netlify.app`.
-3. Run the backend with a production WSGI server and HTTPS. Do not expose the Flask development server to the internet.
-
-**Do not use this demo with real or sensitive data on a public site.** The password check is performed in frontend JavaScript, and the Flask API currently has no authentication or per-user data isolation. The Firebase client file is not connected to the running login/API flow. Add real authentication and enforce authorization in the backend before public use.
-
-Back up PostgreSQL regularly with `pg_dump`.
-
-## Project structure
-
-```text
-jcb_management/
-├── backend/
-│   ├── app.py
-│   ├── requirements.txt
-│   └── .env.example
-├── netlify.toml
-├── frontend/
-│   ├── index.html
-│   ├── .env.example
-│   ├── src/
-│   │   ├── firebaseClient.js
-│   │   └── main.jsx
-│   ├── package.json
-│   ├── vite.config.js
-│   └── style.css
-└── README.md
+```powershell
+cd frontend
+npm install
+npm run dev
 ```
+
+Open the local website address printed by Vite (usually <http://localhost:5173>). During local development, Vite forwards `/api` requests to the Flask API.
+
+## Deploy it
+
+Deploy the frontend and backend separately:
+
+1. Create a hosted PostgreSQL database, for example on Render.
+2. Deploy `backend/` as a Python web service on Render. Set the root directory to `backend`, the build command to `pip install -r requirements.txt`, and the start command below. Add `DATABASE_URL` with the hosted PostgreSQL connection string. After deploying the website, set `FRONTEND_ORIGINS` to its exact public origin.
+
+   ```text
+   python -c "from app import init_db; init_db()" && gunicorn app:app
+   ```
+
+3. Deploy `frontend/` on Vercel. Set the root directory to `frontend`, the build command to `npm run build`, and the output directory to `dist`.
+4. In Vercel, set `VITE_API_BASE_URL` to the public backend URL, without a trailing slash, then redeploy.
+5. Set the backend's `FRONTEND_ORIGINS` to the Vercel website URL and redeploy the backend.
+
+The backend root URL returns a small API status message. The user-facing website is the Vercel URL.
+
+## Important security note
+
+The current login is only a demo check in frontend JavaScript; it does not protect the API or database records. Use fake data only on a public deployment until proper authentication and authorization are added to the backend.

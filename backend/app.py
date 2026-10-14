@@ -4,16 +4,13 @@ from decimal import Decimal
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
 load_dotenv()
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FRONTEND_DIR = os.path.join(BASE_DIR, "frontend", "dist")
-
-app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
+app = Flask(__name__)
 CORS(app, resources={
     r"/api/*": {
         "origins": [
@@ -90,7 +87,7 @@ def money(v):
 
 @app.route("/")
 def home():
-    return send_from_directory(FRONTEND_DIR, "index.html")
+    return jsonify({"message": "JCB Management API is running"})
 
 # --- DRIVERS API ---
 @app.route("/api/drivers", methods=["GET"])

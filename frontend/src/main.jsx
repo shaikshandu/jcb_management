@@ -34,10 +34,12 @@ function toDateOnly(value) {
 }
 
 async function apiRequest(url, options = {}) {
+  const token = sessionStorage.getItem('jcb_token');
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers
     }
   });
@@ -47,7 +49,14 @@ async function apiRequest(url, options = {}) {
   } catch {
     throw new Error(`The server returned an invalid response (${response.status}).`);
   }
-  if (!response.ok) throw new Error(result.error || `Request failed (${response.status}).`);
+  if (!response.ok) {
+    if (response.status === 401 && token && !url.startsWith('/api/auth/')) {
+      window.dispatchEvent(new Event('jcb:unauthorized'));
+    }
+    const error = new Error(result.error || `Request failed (${response.status}).`);
+    error.status = response.status;
+    throw error;
+  }
   return result;
 }
 
@@ -84,51 +93,144 @@ async function getAllData() {
   };
 }
 
-function Login({ onLogin }) {
+function Login({ onAuthenticated }) {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setError('');
-    setLoading(true);
-
-    // TODO: Replace with a real backend fetch call if you have /api/login endpoint e.g.:
-    // const res = await apiRequest('/api/login', { method: 'POST', body: JSON.stringify({ password }) });
-    
-    // Simple frontend passcode check demo (e.g., password: "admin")
-    if (password === 'admin123') {
-      onLogin();
-    } else {
-      setError('Invalid password. Please try again.');
+    if (isRegistering && password !== confirmPassword) {
+      setError('The passwords do not match.');
+      return;
     }
-    setLoading(false);
+    setLoading(true);
+    try {
+      const result = await apiRequest(`/api/auth/${isRegistering ? 'register' : 'login'}`, {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+      sessionStorage.setItem('jcb_token', result.token);
+      sessionStorage.setItem('jcb_email', result.user.email);
+      onAuthenticated(result.user);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <main className="loading-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="panel" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2>🚜 JCB Manager Login</h2>
-        <p className="muted" style={{ marginBottom: '1.5rem' }}>Enter your passcode to access dashboard.</p>
-        <form onSubmit={handleLogin} className="form-grid">
-          <label className="full">
-            Password
-            <input 
-              type="password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              placeholder="Enter password" 
-              required 
-            />
-          </label>
-          {error && <p className="full" style={{ color: 'var(--danger)', fontSize: '0.9rem' }}>{error}</p>}
-          <div className="full">
-            <button className="primary" type="submit" disabled={loading} style={{ width: '100%' }}>
-              {loading ? 'Logging in…' : 'Login'}
-            </button>
+    <main className="auth-screen">
+      <div className="auth-layout">
+        <section className="auth-visual" aria-label="JCB Management introduction">
+          <div className="auth-visual-brand">
+            <span className="auth-visual-mark" aria-hidden="true">🚜</span>
+            <span>JCB MANAGEMENT</span>
           </div>
-        </form>
+          <div className="auth-visual-copy">
+            <p className="auth-visual-kicker">YOUR WORK. YOUR NUMBERS.</p>
+            <h1>Built for the work that moves us.</h1>
+            <p>Keep daily jobs, driver payments and expenses together in one simple workspace.</p>
+          </div>
+          <div className="auth-machine-art" aria-hidden="true">
+            <span className="machine-sun" />
+            <span className="machine-orbit machine-orbit-one" />
+            <span className="machine-orbit machine-orbit-two" />
+            <svg className="machine-illustration" viewBox="0 0 420 250" fill="none">
+              <path d="M39 205h340" stroke="#64748b" strokeWidth="4" strokeLinecap="round" />
+              <path d="m295 157 48 9 32 25-19 15-49-10-32-17z" fill="#d97706" stroke="#fbbf24" strokeWidth="5" strokeLinejoin="round" />
+              <path d="m289 160 55-77 21 11-48 79" fill="#f59e0b" stroke="#fbbf24" strokeWidth="6" strokeLinejoin="round" />
+              <path d="m343 84 26-47 18 10-23 47" fill="#fbbf24" stroke="#fbbf24" strokeWidth="5" strokeLinejoin="round" />
+              <path d="m380 42 17 5 13 20-21-3-11-13z" fill="#f59e0b" stroke="#fbbf24" strokeWidth="4" strokeLinejoin="round" />
+              <path d="M103 166h172l28 29H86z" fill="#f59e0b" stroke="#fbbf24" strokeWidth="5" strokeLinejoin="round" />
+              <path d="m132 166 14-55h81l34 55" fill="#eab308" stroke="#fbbf24" strokeWidth="5" strokeLinejoin="round" />
+              <path d="m160 120-9 38h54v-38z" fill="#172033" stroke="#94a3b8" strokeWidth="4" strokeLinejoin="round" />
+              <path d="M232 119h-21v39h47z" fill="#172033" stroke="#94a3b8" strokeWidth="4" strokeLinejoin="round" />
+              <path d="M91 195h197a24 24 0 0 1 24 24v4H75v-4a24 24 0 0 1 16-24Z" fill="#111827" stroke="#64748b" strokeWidth="5" />
+              <circle cx="124" cy="212" r="10" fill="#334155" stroke="#fbbf24" strokeWidth="4" />
+              <circle cx="164" cy="212" r="10" fill="#334155" stroke="#fbbf24" strokeWidth="4" />
+              <circle cx="204" cy="212" r="10" fill="#334155" stroke="#fbbf24" strokeWidth="4" />
+              <circle cx="244" cy="212" r="10" fill="#334155" stroke="#fbbf24" strokeWidth="4" />
+            </svg>
+            <span className="machine-ground" />
+          </div>
+          <div className="auth-visual-footer"><span>DAILY WORK</span><i /><span>DRIVER PAY</span><i /><span>EXPENSES</span></div>
+        </section>
+
+        <section className="auth-card">
+          <div className="auth-brand-icon" aria-hidden="true">⚙️</div>
+          <p className="auth-eyebrow">JCB WORKSPACE</p>
+          <h1>{isRegistering ? 'Create your account' : 'Welcome back'}</h1>
+          <p className="auth-description">
+            {isRegistering ? 'Create a private workspace for your JCB records.' : 'Sign in to continue to your JCB workspace.'}
+          </p>
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <label>
+              Email address
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={event => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                maxLength={254}
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                autoComplete={isRegistering ? 'new-password' : 'current-password'}
+                value={password}
+                onChange={event => setPassword(event.target.value)}
+                placeholder={isRegistering ? 'At least 10 characters' : 'Enter your password'}
+                minLength={isRegistering ? 10 : undefined}
+                maxLength={128}
+                required
+              />
+            </label>
+            {isRegistering && (
+              <label>
+                Confirm password
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={event => setConfirmPassword(event.target.value)}
+                  placeholder="Enter your password again"
+                  minLength={10}
+                  maxLength={128}
+                  required
+                />
+              </label>
+            )}
+            {error && <p className="auth-error" role="alert">{error}</p>}
+            <button className="primary" type="submit" disabled={loading}>
+              {loading ? 'Please wait…' : isRegistering ? 'Create account' : 'Sign in'}
+            </button>
+          </form>
+          <p className="auth-switch">
+            {isRegistering ? 'Already have an account?' : 'New to JCB Manager?'}
+            {' '}
+            <button
+              className="auth-link"
+              type="button"
+              onClick={() => {
+                setError('');
+                setIsRegistering(current => !current);
+              }}
+            >
+              {isRegistering ? 'Sign in' : 'Create an account'}
+            </button>
+          </p>
+          <p className="auth-secure-note"><span aria-hidden="true">🔒</span> Each account has a private set of records.</p>
+        </section>
       </div>
     </main>
   );
@@ -136,8 +238,9 @@ function Login({ onLogin }) {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('jcb_auth') === 'true';
+    return Boolean(sessionStorage.getItem('jcb_token'));
   });
+  const [accountEmail, setAccountEmail] = useState(() => sessionStorage.getItem('jcb_email') || '');
   const [data, setData] = useState(emptyData);
   const [page, setPage] = useState('dashboard');
   const [loading, setLoading] = useState(true);
@@ -149,6 +252,14 @@ function App() {
   const chart = useRef(null);
 
   const notify = (message, isError = false) => setToast({ message, isError });
+
+  useEffect(() => {
+    function expireSession() {
+      handleLogout();
+    }
+    window.addEventListener('jcb:unauthorized', expireSession);
+    return () => window.removeEventListener('jcb:unauthorized', expireSession);
+  }, []);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -374,7 +485,12 @@ function App() {
   }
 
   function handleLogout() {
-    localStorage.removeItem('jcb_auth');
+    sessionStorage.removeItem('jcb_token');
+    sessionStorage.removeItem('jcb_email');
+    setAccountEmail('');
+    setData(emptyData);
+    setWorkForm(defaultWorkForm());
+    setPage('dashboard');
     setIsAuthenticated(false);
   }
 
@@ -405,8 +521,10 @@ function App() {
   });
 
   if (!isAuthenticated) {
-    return <Login onLogin={() => {
-      localStorage.setItem('jcb_auth', 'true');
+    return <Login onAuthenticated={user => {
+      setAccountEmail(user.email);
+      setData(emptyData);
+      setLoading(true);
       setIsAuthenticated(true);
     }} />;
   }
@@ -454,6 +572,7 @@ function App() {
             <p className="muted">Track your JCB business operations in one place.</p>
           </div>
           <div className="account-menu">
+            <span className="muted account-email">{accountEmail}</span>
             <span className="muted topbar-date">{todayLabel}</span>
           </div>
         </header>

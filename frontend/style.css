@@ -366,11 +366,11 @@ tr:hover td {
   gap: 14px;
 }
 
-.account-phone {
-  font-variant-numeric: tabular-nums;
+.account-email {
+  max-width: 240px;
+  overflow-wrap: anywhere;
 }
 
-.signout-btn,
 .auth-link {
   border: 0;
   background: transparent;
@@ -392,6 +392,7 @@ tr:hover td {
 
 .auth-layout {
   position: relative;
+  display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(360px, 440px);
   gap: clamp(40px, 8vw, 120px);
   overflow: hidden;
@@ -600,52 +601,16 @@ tr:hover td {
   line-height: 1.5;
 }
 
-.google-signin {
-  position: relative;
-  display: flex;
-  width: 100%;
-  min-height: 56px;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 18px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  background: #fff;
-  color: #1f2937;
-  cursor: pointer;
-  font-size: 0.96rem;
-  font-weight: 650;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+.auth-switch {
+  margin-top: 20px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  text-align: center;
 }
 
-.google-signin:hover:not(:disabled) {
-  background: #f8fafc;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
-  transform: translateY(-1px);
-}
-
-.google-signin:focus-visible {
-  outline: 3px solid rgba(245, 158, 11, 0.6);
-  outline-offset: 3px;
-}
-
-.google-signin:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.google-mark {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-}
-
-.google-button-arrow {
-  position: absolute;
-  right: 18px;
-  color: #64748b;
-  font-size: 1.2rem;
+.auth-switch .auth-link {
+  min-height: 32px;
+  padding: 0 3px;
 }
 
 .auth-secure-note {
@@ -677,23 +642,9 @@ tr:hover td {
   min-height: 40px;
 }
 
-.privacy-note {
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  line-height: 1.55;
-}
-
-.auth-message,
 .auth-error {
   margin-top: 14px;
   line-height: 1.45;
-}
-
-.auth-message {
-  color: var(--success);
 }
 
 .auth-error {
@@ -804,16 +755,6 @@ tr:hover td {
     flex-direction: column;
     align-items: flex-end;
     gap: 5px;
-  }
-
-  .account-menu .account-phone {
-    max-width: 100%;
-    padding: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .signout-btn {
-    font-size: 0.8rem;
   }
 
   .topbar p {

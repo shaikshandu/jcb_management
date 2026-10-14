@@ -1319,6 +1319,10 @@ tr:hover td {
     transform: none;
   }
 
+  .nav-btn {
+    flex-direction: column-reverse;
+  }
+
   .nav-btn.active {
     box-shadow: inset 0 2px 0 var(--primary);
   }

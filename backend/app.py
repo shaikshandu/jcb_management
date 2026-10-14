@@ -7,7 +7,9 @@ from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
-
+@app.route("/")
+def home():
+    return {"message": "Flask backend is running!"}
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
